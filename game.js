@@ -54,10 +54,10 @@
 	function Maze(w, h, nextCell, startX, startY) {
 		this.w = (isNaN(w) || w < 5 || w > 999 ? 20 : w);
 		this.h = (isNaN(h) || h < 5 || h > 999 ? 20 : h);
-		this.map = new Array();
+		this.map = [];
 		
 		for(var mh = 0; mh < h; ++mh) { 
-			this.map[mh] = new Array(); 
+			this.map[mh] = []; 
 			for(var mw = 0; mw < w; ++mw) { 
 				this.map[mh][mw] = {'N':0,'S':0,'E':0,'W':0,'V':0}; 
 			} 
@@ -72,10 +72,10 @@
 	}
 
 	Maze.prototype.toGrid = function() {
-		var grid = new Array();
+		var grid = [];
 		
 		for(var mh = 0; mh < (this.h * 3 + 1); ++mh) { 
-			grid[mh] = new Array(); 
+			grid[mh] = []; 
 			
 			for(var mw = 0; mw < (this.w * 3 + 1); ++mw) { 
 				grid[mh][mw] = 0; 
@@ -93,10 +93,10 @@
 				grid[py+1][px] = 1;
 				grid[py+1][px+1] = 1;
 				
-				if(this.map[y][x]['N'] === 1) { grid[(py-1)][px] = 1; grid[(py-1)][px+1] = 1;}
-				if(this.map[y][x]['S'] === 1) { grid[(py+1)][px] = 1; grid[(py+1)][px+1] = 1;}
-				if(this.map[y][x]['E'] === 1) { grid[py][(px+1)] = 1; grid[py+1][(px+1)] = 1;}
-				if(this.map[y][x]['W'] === 1) { grid[py][(px-1)] = 1; grid[py+1][(px-1)] = 1;}
+				if(this.map[y][x].N === 1) { grid[(py-1)][px] = 1; grid[(py-1)][px+1] = 1;}
+				if(this.map[y][x].S === 1) { grid[(py+1)][px] = 1; grid[(py+1)][px+1] = 1;}
+				if(this.map[y][x].E === 1) { grid[py][(px+1)] = 1; grid[py+1][(px+1)] = 1;}
+				if(this.map[y][x].W === 1) { grid[py][(px-1)] = 1; grid[py+1][(px-1)] = 1;}
 			}
 		}
 
@@ -106,9 +106,9 @@
 	};
 
 	Maze.prototype.build = function(dir) {
-		var cells = new Array();
-		cells.push({x:this.startX, y:this.startY});
-		this.map[this.startY][this.startX]['V'] = 1;
+		var cells = [];
+		cells.push({x: this.startX, y: this.startY});
+		this.map[this.startY][this.startX].V = 1;
 
 		var modDir = {
 			'N' : { y : -1, x : 0, 	o : 'S' },
@@ -122,18 +122,18 @@
 			var cell = cells[i];
 
 			// Check for neighbours
-			var n = new Array();
+			var n = [];
 			
-			if(cell.x>0 && this.map[cell.y][(cell.x-1)]['V']==0) { 
+			if(cell.x>0 && this.map[cell.y][(cell.x-1)].V === 0) { 
 				n.push('W');
 			}		
-			if(cell.x<(this.w-1) && this.map[cell.y][(cell.x+1)]['V']==0) { 
+			if(cell.x<(this.w-1) && this.map[cell.y][(cell.x+1)].V === 0) { 
 				n.push('E');
 			}
-			if(cell.y>0 && this.map[(cell.y-1)][cell.x]['V']==0) {
+			if(cell.y>0 && this.map[(cell.y-1)][cell.x].V === 0) {
 				n.push('N');
 			}
-			if(cell.y<(this.h-1) && this.map[(cell.y+1)][cell.x]['V']==0) {
+			if(cell.y<(this.h-1) && this.map[(cell.y+1)][cell.x].V === 0) {
 				n.push('S'); 
 			}
 
@@ -142,14 +142,14 @@
 				continue;
 			}
 
-			var dir = n[Math.floor((Math.random()*10000)%n.length)];
+			var direction = n[Math.floor((Math.random()*10000)%n.length)];
 
-			var destX = (cell.x + modDir[dir].x);
-			var destY = (cell.y + modDir[dir].y);
+			var destX = (cell.x + modDir[direction].x);
+			var destY = (cell.y + modDir[direction].y);
 
-			this.map[cell.y][cell.x][dir] = 1;
-			this.map[destY][destX][modDir[dir].o] = 1;
-			this.map[destY][destX]['V'] = 1;
+			this.map[cell.y][cell.x][direction] = 1;
+			this.map[destY][destX][modDir[direction].o] = 1;
+			this.map[destY][destX].V = 1;
 			cells.push({x:destX, y:destY});
 		}
 
@@ -237,6 +237,10 @@
             }
         },
     };
+
+    function checkRowColLimits(row, col){
+        return (col > 1 && col < mazeMap.gridH-1 && row > 1 && row < mazeMap.gridW-1);
+    }
 	
 	function setMap() {
 		var type;
@@ -247,16 +251,16 @@
                     terrain.push(new Rect(col * blockSize, row * blockSize, blockSize, blockSize, true));
                 }
                 else{
-					if(row === 0 && col === 0){
+					if((row === 0 && col === 0) || (checkRowColLimits(row,col) && mazeMap.gridMap[col-1][row] === 1 && mazeMap.gridMap[col+1][row] === 0 && mazeMap.gridMap[col][row-1] === 1 && mazeMap.gridMap[col][row+1] === 0 )){
 						type = 2;
 					}
-					else if(row === 0 && col === mazeMap.gridH-1){
+					else if((row === 0 && col === mazeMap.gridH-1) || (checkRowColLimits(row,col) && mazeMap.gridMap[col-1][row] === 0 && mazeMap.gridMap[col+1][row] === 1 && mazeMap.gridMap[col][row-1] === 1 && mazeMap.gridMap[col][row+1] === 0 )){
 						type = 3;
 					}
-					else if(row === mazeMap.gridW-1 && col === mazeMap.gridH-1){
+					else if((row === mazeMap.gridW-1 && col === mazeMap.gridH-1) || (checkRowColLimits(row,col) && mazeMap.gridMap[col-1][row] === 0 && mazeMap.gridMap[col+1][row] === 1 && mazeMap.gridMap[col][row-1] === 0 && mazeMap.gridMap[col][row+1] === 1 )){
 						type = 4;
 					}
-					else if(row === mazeMap.gridW-1 && col === 0){
+					else if((row === mazeMap.gridW-1 && col === 0) || (checkRowColLimits(row,col) && mazeMap.gridMap[col-1][row] === 1 && mazeMap.gridMap[col+1][row] === 0 && mazeMap.gridMap[col][row-1] === 0 && mazeMap.gridMap[col][row+1] === 1 )){
 						type = 5;
 					}
 					else if(row > 1 && row < mazeMap.gridW-1 && mazeMap.gridMap[col][row-1] === 1 && mazeMap.gridMap[col][row+1] === 0 && mazeMap.gridMap[col-1][row] === 1 && mazeMap.gridMap[col+1][row] === 1){
@@ -271,22 +275,7 @@
 					else if(col > 1 && col < mazeMap.gridH-1 && mazeMap.gridMap[col-1][row] === 1 && mazeMap.gridMap[col+1][row] === 0 && mazeMap.gridMap[col][row+1] === 1 && mazeMap.gridMap[col][row-1] === 1) {
 						type = 9;
 					}
-					else if(col > 1 && col < mazeMap.gridH-1 && row > 1 && row < mazeMap.gridW-1 && mazeMap.gridMap[col-1][row] === 1 && mazeMap.gridMap[col+1][row] === 0 && mazeMap.gridMap[col][row-1] === 1 && mazeMap.gridMap[col][row+1] === 0 ) {
-						type = 2;
-					}
-					else if(col > 1 && col < mazeMap.gridH-1 && row > 1 && row < mazeMap.gridW-1 && mazeMap.gridMap[col-1][row] === 0 && mazeMap.gridMap[col+1][row] === 1 && mazeMap.gridMap[col][row-1] === 1 && mazeMap.gridMap[col][row+1] === 0 ) {
-						type = 3;
-					}
-					else if(col > 1 && col < mazeMap.gridH-1 && row > 1 && row < mazeMap.gridW-1 && mazeMap.gridMap[col-1][row] === 0 && mazeMap.gridMap[col+1][row] === 1 && mazeMap.gridMap[col][row-1] === 0 && mazeMap.gridMap[col][row+1] === 1 ) {
-						type = 4;
-					}
-					else if(col > 1 && col < mazeMap.gridH-1 && row > 1 && row < mazeMap.gridW-1 && mazeMap.gridMap[col-1][row] === 1 && mazeMap.gridMap[col+1][row] === 0 && mazeMap.gridMap[col][row-1] === 0 && mazeMap.gridMap[col][row+1] === 1 ) {
-						type = 5;
-					}
-					else if(col > 1 && col < mazeMap.gridH-1 && row > 1 && row < mazeMap.gridW-1 && mazeMap.gridMap[col-1][row] === 0 && mazeMap.gridMap[col+1][row] === 0) {
-						type = 1;
-					}
-					else if(row === 0 || row === mazeMap.gridW-1 || (row > 1 && row < mazeMap.gridW-1 && mazeMap.gridMap[col][row-1] === 1 && mazeMap.gridMap[col][row+1] === 1)){
+					else if(row === 0 || row === mazeMap.gridW-1 || (row > 1 && row < mazeMap.gridW-1 && mazeMap.gridMap[col][row-1] === 1 && mazeMap.gridMap[col][row+1] === 1) || (checkRowColLimits(row,col) && mazeMap.gridMap[col-1][row] === 0 && mazeMap.gridMap[col+1][row] === 0)){
 						type = 1;
 					}				
 					else{
@@ -302,40 +291,43 @@
     }
 	
 	function drawStart(){
-        ctx.fillStyle = '#000';
+        ctx.fillStyle = '#A22C29';
         ctx.fillRect(canvas.width/2-150, canvas.height/2-50, 290, 90);
         ctx.textAlign = 'center';
         ctx.fillStyle = '#FFF';
-        ctx.font = "26px Impact";
-        ctx.fillText('Explorer Camp GAME', canvas.width/2, canvas.height/2); 
+        ctx.font = "32px Impact";
+        ctx.fillText('Explorer Camp', canvas.width/2, canvas.height/2); 
         ctx.font = "10px Verdana";
-        ctx.fillText('Press "Enter" to start the game', canvas.width/2, canvas.height/2+20); 
+        ctx.fillText("Press 'Enter' to start the game", canvas.width/2, canvas.height/2+20); 
     }
 
     function drawPause(){
+        ctx.fillStyle = '#A22C29';
+        ctx.fillRect(canvas.width/2-150, canvas.height/2-50, 290, 90);
+        ctx.textAlign = 'center';
         ctx.fillStyle = '#FFF';
         ctx.font = "20px Impact";
         ctx.fillText('PAUSE', canvas.width/2, canvas.height/2); 
         ctx.font = "12px Verdana";
-        ctx.fillText('Press P to Unpause the game', canvas.width/2, canvas.height/2+20); 
+        ctx.fillText("Press 'P' to Unpause the game", canvas.width/2, canvas.height/2+20); 
     }
 
     function drawGameOver(){
         ctx.font = "20px Impact";
         ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2); 
         ctx.font = "10px Verdana";
-        ctx.fillText('Press ESC to restart the game', canvas.width/2, canvas.height/2+20); 
+        ctx.fillText("Press 'ESC' to restart the game", canvas.width/2, canvas.height/2+20); 
     }
 
     function drawPopUp(){
-        ctx.fillStyle = '#000';
+        ctx.fillStyle = '#80A1C1';
         ctx.fillRect(canvas.width/2-145, 50, 290, 90);
         ctx.textAlign = 'center';
         ctx.fillStyle = '#FFF';
         ctx.font = "16px Verdana";
         ctx.fillText(popUpTitle, canvas.width/2, 75); 
 
-        ctx.font = "10px Verdana";
+        ctx.font = "12px Verdana";
         ctx.fillText(popUpMessage, canvas.width/2, 105); 
 
         // Reset styles
@@ -366,12 +358,13 @@
     }
 	
 	function drawMaze() {
+        var i = 0, l = 0;
 
-		for (var i = 0, l = wall.length; i < l; i += 1) {
+		for (i = 0, l = wall.length; i < l; i += 1) {
             ctx.drawImage(iHedge, blockSize*(wall[i].t), 0, blockSize, blockSize, wall[i].left - cam.x, wall[i].top - cam.y, blockSize, blockSize);
         }
 
-        for (var i = 0, l = terrain.length; i < l; i += 1) {
+        for (i = 0, l = terrain.length; i < l; i += 1) {
             ctx.drawImage(iTerrain, terrain[i].left-cam.x, terrain[i].top-cam.y);
         }
 	}
