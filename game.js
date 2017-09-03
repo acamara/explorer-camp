@@ -1,7 +1,7 @@
 (function (window, undefined) {
     'use strict';
 
-    var KEY_ENTER = 13, KEY_LEFT = 37, KEY_UP = 38, KEY_RIGHT = 39, KEY_DOWN = 40, KEY_PAUSE = 80, KEY_M = 77;
+    var KEY_ENTER = 13, KEY_LEFT = 37, KEY_UP = 38, KEY_RIGHT = 39, KEY_DOWN = 40, KEY_PAUSE = 80, KEY_M = 77, KEY_ESC = 27;
 
     var canvas = null;
     var ctx = null;
@@ -19,19 +19,23 @@
     var FPS = 0;
     var frames = 0;
     var acumDelta = 0;
+    var elapsedTime=0;
 
     var lastKeyPress = null;
     var pressing = [];
     var pause = true;
     var gameover = false;
     var start = true;
+    var end = false;
 	
 	var mazeMap;
 	var cam = null;
     var wall = [];
     var terrain = [];
-    //var water = [];
+    var water = [];
     var box = null;
+    var flipper = null;
+    var snorkel = null;
     var player = null;
     var dir = 0;
 	
@@ -40,14 +44,28 @@
     var iTerrain = new Image();
     var iWater = new Image();
     var iBox = new Image();
+    var iFlipper = new Image();
+    var iSnorkel = new Image();
 	
-	var minimap = false;
+	var hasMiniMap = false;
+    var hasFlipper = false;
+    var hasSnorkel = false;
     var showMiniMap = true;
     var showPopUp = false;
     var popUpTitle;
-    var popUpMessage;	
-	
-	function getRandomInt(min, max) {
+    var popUpMessage;
+
+    function convertTime(time){
+        var seconds = Math.floor(time%60);
+        var minutes = Math.floor((time/60)%60);
+           
+        minutes = (minutes < 10) ? "0" + minutes : minutes;
+        seconds = (seconds < 10) ? "0" + seconds : seconds;
+
+        return minutes + ":" + seconds;
+    }
+
+    function getRandomInt(min, max) {
 		return Math.floor(Math.random() * (max - min + 1)) + min;
 	}
 
@@ -238,15 +256,16 @@
         },
     };
 
-    function checkRowColLimits(row, col){
+    function checkRowColLimits(row, col) {
         return (col > 1 && col < mazeMap.gridH-1 && row > 1 && row < mazeMap.gridW-1);
     }
 	
 	function setMap() {
 		var type;
+        var col = 0, row = 0;
         
-		for(var col = 0; col < mazeMap.gridH; ++col){
-			for(var row = 0; row < mazeMap.gridW; ++row){
+		for(col = 0; col < mazeMap.gridH; ++col){
+			for(row = 0; row < mazeMap.gridW; ++row){
                 if(mazeMap.gridMap[col][row] === 1) { 
                     terrain.push(new Rect(col * blockSize, row * blockSize, blockSize, blockSize, true));
                 }
@@ -285,6 +304,11 @@
                 }
             }
         }
+
+        water.push(new Rect((col-2) * blockSize, (row-2) * blockSize, blockSize, blockSize, true, 1));
+        water.push(new Rect((col-2) * blockSize, (row-3) * blockSize, blockSize, blockSize, true, 3));
+        water.push(new Rect((col-3) * blockSize, (row-2) * blockSize, blockSize, blockSize, true, 0));
+        water.push(new Rect((col-3) * blockSize, (row-3) * blockSize, blockSize, blockSize, true, 2));
     
         worldWidth = mazeMap.gridH * blockSize;
         worldHeight = mazeMap.gridW * blockSize;
@@ -297,8 +321,21 @@
         ctx.fillStyle = '#FFF';
         ctx.font = "32px Impact";
         ctx.fillText('Explorer Camp', canvas.width/2, canvas.height/2); 
-        ctx.font = "10px Verdana";
+        ctx.font = "12px Verdana";
         ctx.fillText("Press 'Enter' to start the game", canvas.width/2, canvas.height/2+20); 
+    }
+
+    function drawEnd(){
+        ctx.fillStyle = '#A22C29';
+        ctx.fillRect(canvas.width/2-150, canvas.height/2-50, 300, 130);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#FFF';
+        ctx.font = "20px Impact";
+        ctx.fillText('WIN', canvas.width/2, canvas.height/2);
+        ctx.font = "10px Verdana";
+        ctx.fillText("Congratulations, you have became an Explorer!", canvas.width/2, canvas.height/2+20); 
+        ctx.font = "12px Verdana";
+        ctx.fillText("Press 'ESC' to restart the game", canvas.width/2, canvas.height/2+50); 
     }
 
     function drawPause(){
@@ -313,22 +350,28 @@
     }
 
     function drawGameOver(){
+        ctx.fillStyle = '#A22C29';
+        ctx.fillRect(canvas.width/2-150, canvas.height/2-50, 300, 130);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#FFF';
         ctx.font = "20px Impact";
-        ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2); 
+        ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2);
         ctx.font = "10px Verdana";
-        ctx.fillText("Press 'ESC' to restart the game", canvas.width/2, canvas.height/2+20); 
+        ctx.fillText("You need a snorkel and a flipper, to become an Explorer!", canvas.width/2, canvas.height/2+20); 
+        ctx.font = "12px Verdana";
+        ctx.fillText("Press 'ESC' to restart the game", canvas.width/2, canvas.height/2+50); 
     }
 
     function drawPopUp(){
         ctx.fillStyle = '#80A1C1';
-        ctx.fillRect(canvas.width/2-145, 50, 290, 90);
+        ctx.fillRect(canvas.width/2-145, 75, 290, 90);
         ctx.textAlign = 'center';
         ctx.fillStyle = '#FFF';
         ctx.font = "16px Verdana";
-        ctx.fillText(popUpTitle, canvas.width/2, 75); 
+        ctx.fillText(popUpTitle, canvas.width/2, 100); 
 
         ctx.font = "12px Verdana";
-        ctx.fillText(popUpMessage, canvas.width/2, 105); 
+        ctx.fillText(popUpMessage, canvas.width/2, 130); 
 
         // Reset styles
         ctx.textAlign = 'left';
@@ -360,12 +403,16 @@
 	function drawMaze() {
         var i = 0, l = 0;
 
-		for (i = 0, l = wall.length; i < l; i += 1) {
+		for (i = 0, l = wall.length; i < l; ++i) {
             ctx.drawImage(iHedge, blockSize*(wall[i].t), 0, blockSize, blockSize, wall[i].left - cam.x, wall[i].top - cam.y, blockSize, blockSize);
         }
 
-        for (i = 0, l = terrain.length; i < l; i += 1) {
+        for (i = 0, l = terrain.length; i < l; ++i) {
             ctx.drawImage(iTerrain, terrain[i].left-cam.x, terrain[i].top-cam.y);
+        }
+
+        for (i = 0, l = water.length; i < l; ++i) {
+            ctx.drawImage(iWater, blockSize*(water[i].t), 0, blockSize, blockSize, water[i].left - cam.x, water[i].top - cam.y, blockSize, blockSize);
         }
 	}
 	
@@ -376,6 +423,9 @@
 		
 		ctx.fillStyle="white";
 		ctx.fillRect(miniMapLeft, miniMapTop, mazeMap.gridH * miniMapScale+10, mazeMap.gridW*miniMapScale+10);
+
+        ctx.fillStyle="#E8E0A0";
+        ctx.fillRect(miniMapLeft+miniMapBorder, miniMapTop+miniMapBorder, mazeMap.gridH * miniMapScale, mazeMap.gridW*miniMapScale);
 		
 		ctx.fillStyle="black";
 		for (var i = 0, l = wall.length; i < l; i += 1) {
@@ -389,6 +439,22 @@
 		
 		ctx.fillStyle="#FFF";
 	}
+
+    function drawElapsedTime(){
+        ctx.fillStyle="black";
+        ctx.fillRect(canvas.width/2-37, 5, 74, 42);
+        ctx.fillStyle="white";
+        ctx.fillRect(canvas.width/2-32, 10, 64, 32);
+        ctx.fillStyle='black';
+        ctx.textAlign='center';
+        ctx.font='20px arial';
+        ctx.fillText(convertTime(elapsedTime), canvas.width/2, 32);
+
+        // Reset styles
+        ctx.textAlign = 'left';
+        ctx.font = "10px Verdana";
+        ctx.fillStyle = '#FFF';
+    }
 	
 	function draw() {
         // Draw background canvas
@@ -402,15 +468,27 @@
         ctx.drawImage(iPlayer, blockSize*dir, 0, blockSize, 48, player.left - cam.x, player.top - cam.y, blockSize, 48);
 
         // Draw box
-        ctx.drawImage(iBox, box.left-cam.x, box.top-cam.y);
-
+        if(!hasMiniMap){
+            ctx.drawImage(iBox, box.left-cam.x, box.top-cam.y);
+        }
+        
+        // Draw snorkel
+        if(!hasSnorkel && hasMiniMap){
+            ctx.drawImage(iSnorkel, snorkel.left-cam.x, snorkel.top-cam.y);
+        }
+        
+        // Draw flipper
+        if(!hasFlipper && hasMiniMap){
+            ctx.drawImage(iFlipper, flipper.left-cam.x, flipper.top-cam.y);
+        }
+        
         // Draw Pop Up Messages
         if(showPopUp){
             drawPopUp();
         }
 
         // Draw mini Map
-        if(minimap && showMiniMap){
+        if(hasMiniMap && showMiniMap){
            drawMiniMap();
         }
 
@@ -420,6 +498,9 @@
             if(start){
                 drawStart();
             }
+            else if(end){
+                drawEnd();
+            }
             else if (gameover) {
                 drawGameOver();
             } else {
@@ -427,6 +508,8 @@
             }
             ctx.textAlign = 'left';
         }
+
+        drawElapsedTime();
 
         // FOR DEBUG
         // Draw FPS
@@ -443,9 +526,9 @@
         //drawGrid();
     }
 	
-	function boxIntersectsWall() {
+	function intersectsWall(object) {
 		for (var i = 0, l = wall.length; i < l; i += 1) {
-            if (box.intersects(wall[i])) {
+            if (object.intersects(wall[i])) {
                 return true;
             }
         }
@@ -453,9 +536,39 @@
 	}
 	
 	function miniMapIntersects(){
-        if(!minimap){
             triggerPopUp("Well, Mini Map found!", "You can show/hide the Map pressing 'M'", 3000);
-            minimap = true;
+            hasMiniMap = true;
+    }
+
+    function snorkelIntersects(){
+            var msg = "You should search the exit, a small lake.";
+            if(!hasFlipper){
+                msg = "You should search a flipper.";
+            }
+            triggerPopUp("Well, Snorkel found!", msg, 3000);
+            hasSnorkel = true;
+    }
+
+    function flipperIntersects(){
+            var msg = "You should search the exit, a small lake.";
+            if(!hasSnorkel){
+                 msg = "You should search a snorkel.";
+            }
+
+            triggerPopUp("Well, Flipper found!", msg, 3000);
+            hasFlipper = true;
+    }
+
+    function waterIntersects() {
+        if (player.intersects(water[0])) {
+            if(hasSnorkel && hasFlipper){
+                end = true;
+                pause = true;
+            }
+            else{
+                gameover = true;
+                pause = true;
+            }
         }
     }
 	
@@ -471,95 +584,118 @@
         var i = 0, l = 0;
 
         if (!pause) {
-       
+
+            // Increment elapsedTime
+            elapsedTime += deltaTime;
+            
             // Move Player
             if (pressing[KEY_UP]) {
                 dir = 2;
                 player.top -= 120 * deltaTime;
-                
+                /*
                 for (i = 0, l = wall.length; i < l; i += 1) {
                     if (player.intersects(wall[i])) {
                         player.top = wall[i].bottom;
                     }
                 }
-                
-                if (player.intersects(box)) {
+                */                
+                if (!hasMiniMap && player.intersects(box)) {
                     miniMapIntersects();
                     player.top = box.bottom;
                 }
-				/*
-                for (i = 0, l = water.length; i < l; i += 1) {
-                    if (player.intersects(water[i])) {
-                        player.top = water[i].bottom;
-                    }
+
+                if (!hasSnorkel && player.intersects(snorkel)) {
+                    snorkelIntersects();
+                    player.top = snorkel.bottom;
                 }
-				*/
+
+                if (!hasFlipper && player.intersects(flipper)) {
+                    flipperIntersects();
+                    player.top = flipper.bottom;
+                }
+				
+                waterIntersects();
             }
             if (pressing[KEY_RIGHT]) {
                 dir = 1;
                 player.left += 120 * deltaTime;
-                
+                /*
                 for (i = 0, l = wall.length; i < l; i += 1) {
                     if (player.intersects(wall[i])) {
                         player.right = wall[i].left;
                     }
                 }
-				
-                if (player.intersects(box)) {
+				*/
+                if (!hasMiniMap && player.intersects(box)) {
                     miniMapIntersects();
                     player.right = box.left;
                 }
-				/*
-                for (i = 0, l = water.length; i < l; i += 1) {
-                    if (player.intersects(water[i])) {
-                        player.right = water[i].left;
-                    }
+
+                if (!hasSnorkel && player.intersects(snorkel)) {
+                    snorkelIntersects();
+                    player.right = snorkel.left;
                 }
-				*/
+
+                if (!hasFlipper && player.intersects(flipper)) {
+                    flipperIntersects();
+                    player.right = flipper.left;
+                }
+				
+                waterIntersects();
             }
             if (pressing[KEY_DOWN]) {
                 dir = 0;
                 player.top += 120 * deltaTime;
-                
+                /*
                 for (i = 0, l = wall.length; i < l; i += 1) {
                     if (player.intersects(wall[i])) {
                         player.bottom = wall[i].top;
                     }
                 }
-				
-                if (player.intersects(box)) {
+				*/
+                if (!hasMiniMap && player.intersects(box)) {
                     miniMapIntersects();
                     player.bottom = box.top;
                 }
-				/*
-                for (i = 0, l = water.length; i < l; i += 1) {
-                    if (player.intersects(water[i])) {
-                        player.bottom = water[i].top;
-                    }
+
+                if (!hasSnorkel && player.intersects(snorkel)) {
+                    snorkelIntersects();
+                    player.bottom = snorkel.top;
                 }
-				*/
+
+                if (!hasFlipper && player.intersects(flipper)) {
+                    flipperIntersects();
+                    player.bottom = flipper.top;
+                }
+
+			    waterIntersects();			
             }
             if (pressing[KEY_LEFT]) {
                 dir = 3;
                 player.left -= 120 * deltaTime;
-                
+                /*
                 for (i = 0, l = wall.length; i < l; i += 1) {
                     if (player.intersects(wall[i])) {
                         player.left = wall[i].right;
                     }
                 }
-				
-                if (player.intersects(box)) {
+				*/
+                if (!hasMiniMap && player.intersects(box)) {
                     miniMapIntersects();
                     player.left = box.right;
                 }
-				/*
-                for (i = 0, l = water.length; i < l; i += 1) {
-                    if (player.intersects(water[i])) {
-                        player.left = water[i].right;
-                    }
+
+                if (!hasSnorkel && player.intersects(snorkel)) {
+                    snorkelIntersects();
+                    player.left = snorkel.right;
                 }
-				*/
+
+                if (!hasFlipper && player.intersects(flipper)) {
+                    flipperIntersects();
+                    player.left = flipper.right;
+                }
+				
+                waterIntersects();
             }
 
             // Focus player
@@ -577,6 +713,11 @@
             pause = false;
             start = false;
             triggerPopUp("Instrucctions", "You should search a small wooden box", 3000);
+        }
+
+        // ReStart
+        if (lastKeyPress === KEY_ESC && (end || gameover)) {
+            reset();
         }
 
         // Show/hide Map
@@ -631,24 +772,78 @@
         iTerrain.src = 'assets/terrain.png';
         iBox.src = 'assets/box.png';
         iWater.src = 'assets/water.png';
+        iSnorkel.src = 'assets/snorkel.png';
+        iFlipper.src = 'assets/flipper.png';
 
         // Set initial map
         setMap();
 		
-		// Create box
-		var x = blockSize;
-		var y = getRandomInt(96, canvas.height-blockSize);
-		box = new Rect(x, y, blockSize, blockSize, true);
-		
-		while(y%blockSize !== 0 || boxIntersectsWall()){
-			y = getRandomInt(96, canvas.height-blockSize);
-			box = new Rect(x, y, blockSize, blockSize, true);
-		}
+		 // Create box
+        var x = getRandomInt(64, canvas.width-blockSize);
+        var y = getRandomInt(96, canvas.height-blockSize);
+        box = new Rect(x, y, blockSize, blockSize, true);
+        
+        while(x%blockSize !== 0 || y%blockSize !== 0 || intersectsWall(box)){
+            x = getRandomInt(64, canvas.width-blockSize);
+            y = getRandomInt(96, canvas.height-blockSize);
+            box = new Rect(x, y, blockSize, blockSize, true);
+        }
+
+        // Create equipment
+        x = getRandomInt(64, (mazeMap.gridH-4) * blockSize);
+        y = getRandomInt(96, (mazeMap.gridW-4) * blockSize);
+        snorkel = new Rect(x, y, blockSize, blockSize, true);
+
+        while(x%blockSize !== 0 || y%blockSize !== 0 || intersectsWall(snorkel) || snorkel.intersects(box)){
+            x = getRandomInt(64, (mazeMap.gridH-4) * blockSize);
+            y = getRandomInt(96, (mazeMap.gridW-4) * blockSize);
+            snorkel = new Rect(x, y, blockSize, blockSize, true);
+        }
+
+        x = getRandomInt(64, (mazeMap.gridH-4) * blockSize);
+        y = getRandomInt(96, (mazeMap.gridW-4) * blockSize);
+        flipper = new Rect(x, y, blockSize, blockSize, true);
+
+        while(x%blockSize !== 0 || y%blockSize !== 0 || intersectsWall(flipper) || flipper.intersects(box) || flipper.intersects(snorkel)){
+            x = getRandomInt(64, (mazeMap.gridH-4) * blockSize);
+            y = getRandomInt(96, (mazeMap.gridW-4) * blockSize);
+            flipper = new Rect(x, y, blockSize, blockSize, true);
+        }
 				        
         // Start game
         run();
     }
 	
+    function reset(){
+        // Create maze
+        mazeMap = new Maze(mazeW, mazeH, 'random', 1, 1);
+
+        // Create player
+        player = new Rect(32, 32, 32, 48, true);
+
+        // Set initial map
+        setMap();
+        
+        // Create box
+        var x = getRandomInt(64, canvas.width-blockSize);
+        var y = getRandomInt(96, canvas.height-blockSize);
+        box = new Rect(x, y, blockSize, blockSize, true);
+        
+        while(y%blockSize !== 0 || intersectsWall(box)){
+            y = getRandomInt(96, canvas.height-blockSize);
+            box = new Rect(x, y, blockSize, blockSize, true);
+        }
+
+        // Create equipment
+        x = getRandomInt(64, (mazeMap.gridH-2) * blockSize);
+        y = getRandomInt(96, (mazeMap.gridW-2) * blockSize);
+        snorkel = new Rect(x, y, blockSize, blockSize, true);
+
+        x = getRandomInt(64, (mazeMap.gridH-2) * blockSize);
+        y = getRandomInt(96, (mazeMap.gridW-2) * blockSize);
+        flipper = new Rect(x, y, blockSize, blockSize, true);
+    }
+
     window.addEventListener('load', init, false);
 
 	window.requestAnimationFrame = (function () {
