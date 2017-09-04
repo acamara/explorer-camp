@@ -19,7 +19,8 @@
     var FPS = 0;
     var frames = 0;
     var acumDelta = 0;
-    var elapsedTime=0;
+    var gTime = 0;
+    var elapsedTime = 0;
 
     var lastKeyPress = null;
     var pressing = [];
@@ -321,8 +322,10 @@
         ctx.fillStyle = '#FFF';
         ctx.font = "32px Impact";
         ctx.fillText('Explorer Camp', canvas.width/2, canvas.height/2); 
-        ctx.font = "12px Verdana";
-        ctx.fillText("Press 'Enter' to start the game", canvas.width/2, canvas.height/2+20); 
+        if((~~(gTime*3)%2) === 1){
+            ctx.font = "12px Verdana";
+            ctx.fillText("Press 'Enter' to start the game", canvas.width/2, canvas.height/2+20); 
+        }
     }
 
     function drawEnd(){
@@ -334,8 +337,10 @@
         ctx.fillText('WIN', canvas.width/2, canvas.height/2);
         ctx.font = "10px Verdana";
         ctx.fillText("Congratulations, you have became an Explorer!", canvas.width/2, canvas.height/2+20); 
-        ctx.font = "12px Verdana";
-        ctx.fillText("Press 'ESC' to restart the game", canvas.width/2, canvas.height/2+50); 
+        if((~~(gTime*3)%2) === 1){
+            ctx.font = "12px Verdana";
+            ctx.fillText("Press 'ESC' to restart the game", canvas.width/2, canvas.height/2+50); 
+        }
     }
 
     function drawPause(){
@@ -345,8 +350,10 @@
         ctx.fillStyle = '#FFF';
         ctx.font = "20px Impact";
         ctx.fillText('PAUSE', canvas.width/2, canvas.height/2); 
-        ctx.font = "12px Verdana";
-        ctx.fillText("Press 'P' to Unpause the game", canvas.width/2, canvas.height/2+20); 
+        if((~~(gTime*3)%2) === 1){
+            ctx.font = "12px Verdana";
+            ctx.fillText("Press 'P' to pause/resume the game", canvas.width/2, canvas.height/2+20); 
+        }
     }
 
     function drawGameOver(){
@@ -358,8 +365,10 @@
         ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2);
         ctx.font = "10px Verdana";
         ctx.fillText("You need a snorkel and a flipper, to become an Explorer!", canvas.width/2, canvas.height/2+20); 
-        ctx.font = "12px Verdana";
-        ctx.fillText("Press 'ESC' to restart the game", canvas.width/2, canvas.height/2+50); 
+        if((~~(gTime*3)%2) === 1){
+            ctx.font = "12px Verdana";
+            ctx.fillText("Press 'ESC' to restart the game", canvas.width/2, canvas.height/2+50); 
+        }
     }
 
     function drawPopUp(){
@@ -592,6 +601,8 @@
 	
 	function act(deltaTime) {
         var i = 0, l = 0;
+
+        gTime += deltaTime;
 
         if (!pause) {
 
