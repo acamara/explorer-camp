@@ -56,6 +56,7 @@
     var endTimePopUp = 0;
     var popUpTitle;
     var popUpMessage;
+    var endTimeInformation = 0;
 
     function convertTime(time){
         var seconds = Math.floor(time%60);
@@ -315,10 +316,33 @@
         worldWidth = mazeMap.gridH * blockSize;
         worldHeight = mazeMap.gridW * blockSize;
     }
+
+    // A utility function to reset styles
+    function resetStyles(){
+        // Reset styles
+        ctx.textAlign = 'left';
+        ctx.font = "10px Verdana";
+        ctx.fillStyle = '#FFF';
+    }
+
+    // A utility function to draw a rectangle with rounded corners.
+    function roundedRect(ctx, x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.moveTo(x, y + radius);
+        ctx.lineTo(x, y + height - radius);
+        ctx.arcTo(x, y + height, x + radius, y + height, radius);
+        ctx.lineTo(x + width - radius, y + height);
+        ctx.arcTo(x + width, y + height, x + width, y + height-radius, radius);
+        ctx.lineTo(x + width, y + radius);
+        ctx.arcTo(x + width, y, x + width - radius, y, radius);
+        ctx.lineTo(x + radius, y);
+        ctx.arcTo(x, y, x, y + radius, radius);
+        ctx.stroke();
+    }
 	
 	function drawStart(){
         ctx.fillStyle = '#A22C29';
-        ctx.fillRect(canvas.width/2-150, canvas.height/2-50, 290, 90);
+        ctx.fillRect(canvas.width/2-150, canvas.height/2-50, 290, 100);
         ctx.textAlign = 'center';
         ctx.fillStyle = '#FFF';
         ctx.font = "32px Impact";
@@ -327,26 +351,28 @@
             ctx.font = "12px Verdana";
             ctx.fillText("Press 'Enter' to start the game", canvas.width/2, canvas.height/2+20); 
         }
+        resetStyles();
     }
 
     function drawEnd(){
         ctx.fillStyle = '#A22C29';
-        ctx.fillRect(canvas.width/2-150, canvas.height/2-50, 300, 130);
+        ctx.fillRect(canvas.width/2-150, canvas.height/2-60, 300, 120);
         ctx.textAlign = 'center';
         ctx.fillStyle = '#FFF';
         ctx.font = "20px Impact";
-        ctx.fillText('WIN', canvas.width/2, canvas.height/2);
+        ctx.fillText('WIN', canvas.width/2, canvas.height/2-30);
         ctx.font = "10px Verdana";
-        ctx.fillText("Congratulations, you have became an Explorer!", canvas.width/2, canvas.height/2+20); 
+        ctx.fillText("Congratulations, you have became an Explorer!", canvas.width/2, canvas.height/2-10); 
         if((~~(gTime*3)%2) === 1){
             ctx.font = "12px Verdana";
-            ctx.fillText("Press 'ESC' to restart the game", canvas.width/2, canvas.height/2+50); 
+            ctx.fillText("Press 'ESC' to restart the game", canvas.width/2, canvas.height/2+20); 
         }
+        resetStyles();
     }
 
     function drawPause(){
         ctx.fillStyle = '#A22C29';
-        ctx.fillRect(canvas.width/2-150, canvas.height/2-50, 290, 90);
+        ctx.fillRect(canvas.width/2-150, canvas.height/2-50, 290, 100);
         ctx.textAlign = 'center';
         ctx.fillStyle = '#FFF';
         ctx.font = "20px Impact";
@@ -355,20 +381,21 @@
             ctx.font = "12px Verdana";
             ctx.fillText("Press 'P' to pause/resume the game", canvas.width/2, canvas.height/2+20); 
         }
+        resetStyles();
     }
 
     function drawGameOver(){
         ctx.fillStyle = '#A22C29';
-        ctx.fillRect(canvas.width/2-150, canvas.height/2-50, 300, 130);
+        ctx.fillRect(canvas.width/2-150, canvas.height/2-60, 300, 120);
         ctx.textAlign = 'center';
         ctx.fillStyle = '#FFF';
         ctx.font = "20px Impact";
-        ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2);
+        ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2-30);
         ctx.font = "10px Verdana";
-        ctx.fillText("You need a snorkel and a flipper, to become an Explorer!", canvas.width/2, canvas.height/2+20); 
+        ctx.fillText("You need a snorkel and a flipper, to become an Explorer!", canvas.width/2, canvas.height/2-10); 
         if((~~(gTime*3)%2) === 1){
             ctx.font = "12px Verdana";
-            ctx.fillText("Press 'ESC' to restart the game", canvas.width/2, canvas.height/2+50); 
+            ctx.fillText("Press 'ESC' to restart the game", canvas.width/2, canvas.height/2+20); 
         }
     }
 
@@ -383,10 +410,47 @@
         ctx.font = "12px Verdana";
         ctx.fillText(popUpMessage, canvas.width/2, 130); 
 
-        // Reset styles
-        ctx.textAlign = 'left';
-        ctx.font = "10px Verdana";
+        resetStyles();
+    }
+
+    function drawInformation(){
+        ctx.fillStyle = '#80A1C1';
+        ctx.fillRect(canvas.width/2-200, 75, 400, 350);
+        ctx.textAlign = 'center';
         ctx.fillStyle = '#FFF';
+        ctx.font = "16px Verdana";
+        ctx.fillText('Instrucctions', canvas.width/2, 100); 
+
+        ctx.textAlign = 'left';
+        ctx.font = "12px Verdana";
+        ctx.fillText('To become an explorer you should find the exit of the maze,', canvas.width/2-185, 140); 
+        ctx.fillText('but before you should search some objects that will help', canvas.width/2-185, 157);
+        ctx.fillText('you to escape.', canvas.width/2-185, 174); 
+
+        ctx.fillText('Be careful! You are lost in a big maze and have a limited', canvas.width/2-185, 208);
+        ctx.fillText('time to escape.', canvas.width/2-185, 225); 
+       
+        ctx.fillText("Use arrow keys to move around, and press 'P' to pause.", canvas.width/2-185, 260); 
+
+        //ctx.fillText("To show/hide instrucctions press 'I'", canvas.width/2-190, 400); 
+
+        ctx.textAlign = 'center';
+        ctx.font = "10px Verdana";
+        ctx.strokeStyle="#FFF";
+        
+        ctx.fillText('Up', canvas.width/2, 305); 
+        roundedRect(ctx, canvas.width/2-22.5, 280, 45, 45, 10);
+
+        ctx.fillText('Left', canvas.width/2-50, 356);
+        roundedRect(ctx, canvas.width/2-72.5, 330, 45, 45, 10);
+        
+        ctx.fillText('Down', canvas.width/2, 356);
+        roundedRect(ctx, canvas.width/2-22.5, 330, 45, 45, 10);
+
+        ctx.fillText('Right', canvas.width/2+50, 356);        
+        roundedRect(ctx, canvas.width/2+27.5, 330, 45, 45, 10);
+
+        resetStyles();
     }
 
     function drawGrid(){
@@ -472,10 +536,7 @@
         ctx.font='20px arial';
         ctx.fillText(convertTime(elapsedTime), canvas.width/2, 32);
 
-        // Reset styles
-        ctx.textAlign = 'left';
-        ctx.font = "10px Verdana";
-        ctx.fillStyle = '#FFF';
+        resetStyles();
     }
 	
 	function draw() {
@@ -508,6 +569,11 @@
         // Draw flipper
         if(!hasFlipper && hasMiniMap){
             ctx.drawImage(iFlipper, flipper.left-cam.x, flipper.top-cam.y);
+        }
+
+        // Draw Information
+        if(endTimeInformation > elapsedTime){
+            drawInformation();
         }
         
         // Draw Pop Up Messages
@@ -599,6 +665,10 @@
             }
         }
     }
+
+    function triggerInformation(time){
+        endTimeInformation = elapsedTime + time;  //seconds
+    }
 	
 	function triggerPopUp(title, message, time){
         endTimePopUp = elapsedTime + time;  //seconds
@@ -633,12 +703,12 @@
                     player.top = box.bottom;
                 }
 
-                if (!hasSnorkel && player.intersects(snorkel)) {
+                if (!hasSnorkel && hasMiniMap && player.intersects(snorkel)) {
                     snorkelIntersects();
                     player.top = snorkel.bottom;
                 }
 
-                if (!hasFlipper && player.intersects(flipper)) {
+                if (!hasFlipper && hasMiniMap && player.intersects(flipper)) {
                     flipperIntersects();
                     player.top = flipper.bottom;
                 }
@@ -661,12 +731,12 @@
                     player.right = box.left;
                 }
 
-                if (!hasSnorkel && player.intersects(snorkel)) {
+                if (!hasSnorkel && hasMiniMap && player.intersects(snorkel)) {
                     snorkelIntersects();
                     player.right = snorkel.left;
                 }
 
-                if (!hasFlipper && player.intersects(flipper)) {
+                if (!hasFlipper && hasMiniMap && player.intersects(flipper)) {
                     flipperIntersects();
                     player.right = flipper.left;
                 }
@@ -689,12 +759,12 @@
                     player.bottom = box.top;
                 }
 
-                if (!hasSnorkel && player.intersects(snorkel)) {
+                if (!hasSnorkel && hasMiniMap && player.intersects(snorkel)) {
                     snorkelIntersects();
                     player.bottom = snorkel.top;
                 }
 
-                if (!hasFlipper && player.intersects(flipper)) {
+                if (!hasFlipper && hasMiniMap && player.intersects(flipper)) {
                     flipperIntersects();
                     player.bottom = flipper.top;
                 }
@@ -717,12 +787,12 @@
                     player.left = box.right;
                 }
 
-                if (!hasSnorkel && player.intersects(snorkel)) {
+                if (!hasSnorkel && hasMiniMap && player.intersects(snorkel)) {
                     snorkelIntersects();
                     player.left = snorkel.right;
                 }
 
-                if (!hasFlipper && player.intersects(flipper)) {
+                if (!hasFlipper && hasMiniMap && player.intersects(flipper)) {
                     flipperIntersects();
                     player.left = flipper.right;
                 }
@@ -744,7 +814,7 @@
         if (lastKeyPress === KEY_ENTER) {
             pause = false;
             start = false;
-            triggerPopUp("Instrucctions", "You should search a small wooden box", 3);
+            triggerInformation(1);
         }
 
         // Restart
