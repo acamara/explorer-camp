@@ -28,6 +28,7 @@
     var gameover = false;
     var start = true;
     var end = false;
+    var moving = false;
 	
 	var mazeMap;
 	var cam = null;
@@ -486,7 +487,13 @@
         drawMaze();
 
         // Draw Player
-        ctx.drawImage(iPlayer, blockSize*dir, 0, blockSize, 48, player.left - cam.x, player.top - cam.y, blockSize, 48);
+        if(moving){
+            ctx.drawImage(iPlayer, blockSize*dir, (~~(elapsedTime*10)%3)*48, blockSize, 48, player.left - cam.x, player.top - cam.y, blockSize, 48);
+        }
+        else{
+            ctx.drawImage(iPlayer, blockSize*dir, 96, blockSize, 48, player.left - cam.x, player.top - cam.y, blockSize, 48);
+        }
+        
 
         // Draw box
         if(!hasMiniMap){
@@ -612,6 +619,7 @@
             // Move Player
             if (pressing[KEY_UP]) {
                 dir = 2;
+                moving = true;
                 player.top -= 120 * deltaTime;
                 /*
                 for (i = 0, l = wall.length; i < l; i += 1) {
@@ -639,6 +647,7 @@
             }
             if (pressing[KEY_RIGHT]) {
                 dir = 1;
+                moving = true;
                 player.left += 120 * deltaTime;
                 /*
                 for (i = 0, l = wall.length; i < l; i += 1) {
@@ -666,6 +675,7 @@
             }
             if (pressing[KEY_DOWN]) {
                 dir = 0;
+                moving = true;
                 player.top += 120 * deltaTime;
                 /*
                 for (i = 0, l = wall.length; i < l; i += 1) {
@@ -693,6 +703,7 @@
             }
             if (pressing[KEY_LEFT]) {
                 dir = 3;
+                moving = true;
                 player.left -= 120 * deltaTime;
                 /*
                 for (i = 0, l = wall.length; i < l; i += 1) {
@@ -929,7 +940,7 @@
     }, false);
 
     document.addEventListener('keyup', function (evt) {
-        pressing[evt.which] = false;
+        pressing[evt.which] = false; moving = false;
     }, false);
 
 }(window));
