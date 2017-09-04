@@ -51,7 +51,7 @@
     var hasFlipper = false;
     var hasSnorkel = false;
     var showMiniMap = true;
-    var showPopUp = false;
+    var endTimePopUp = 0;
     var popUpTitle;
     var popUpMessage;
 
@@ -495,7 +495,7 @@
         }
         
         // Draw Pop Up Messages
-        if(showPopUp){
+        if(endTimePopUp > elapsedTime){
             drawPopUp();
         }
 
@@ -548,7 +548,7 @@
 	}
 	
 	function boxIntersects(){
-            triggerPopUp("Well, Mini Map found!", "You can show/hide the Map pressing 'M'", 3000);
+            triggerPopUp("Well, Mini Map found!", "You can show/hide the Map pressing 'M'", 3);
             hasMiniMap = true;
     }
 
@@ -557,7 +557,7 @@
             if(!hasFlipper){
                 msg = "You should search a flipper.";
             }
-            triggerPopUp("Well, Snorkel found!", msg, 3000);
+            triggerPopUp("Well, Snorkel found!", msg, 3);
             hasSnorkel = true;
     }
 
@@ -567,7 +567,7 @@
                  msg = "You should search a snorkel.";
             }
 
-            triggerPopUp("Well, Flipper found!", msg, 3000);
+            triggerPopUp("Well, Flipper found!", msg, 3);
             hasFlipper = true;
     }
 
@@ -585,11 +585,9 @@
     }
 	
 	function triggerPopUp(title, message, time){
-        showPopUp = true;
+        endTimePopUp = elapsedTime + time;  //seconds
         popUpTitle = title;
         popUpMessage = message;
-
-        setTimeout(function(){ showPopUp = false; }, time);
     }
 	
 	function act(deltaTime) {
@@ -724,7 +722,7 @@
         if (lastKeyPress === KEY_ENTER) {
             pause = false;
             start = false;
-            triggerPopUp("Instrucctions", "You should search a small wooden box", 3000);
+            triggerPopUp("Instrucctions", "You should search a small wooden box", 3);
         }
 
         // Restart
@@ -856,7 +854,7 @@
         hasFlipper = false;
         hasSnorkel = false;
         showMiniMap = true;
-        showPopUp = false;
+        endTimePopUp = 0;
 
         // Create maze
         mazeMap = new Maze(mazeW, mazeH, 'random', 1, 1);
