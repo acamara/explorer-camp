@@ -432,10 +432,22 @@
             ctx.fillRect((wall[i].left/blockSize)*miniMapScale+miniMapLeft+miniMapBorder, (wall[i].top/blockSize)*miniMapScale+miniMapTop+miniMapBorder, miniMapScale, miniMapScale);
         }
 		
+        // Player
         ctx.fillStyle="red";
 		ctx.beginPath();
 		ctx.arc((player.left/blockSize)*miniMapScale+miniMapLeft+miniMapBorder+1, (player.top/blockSize)*miniMapScale+miniMapTop+miniMapBorder+1,2,0,2*Math.PI);
 		ctx.fill();
+
+        // Snorkel
+        ctx.fillStyle="green";
+        ctx.beginPath();
+        ctx.arc((snorkel.left/blockSize)*miniMapScale+miniMapLeft+miniMapBorder+1, (snorkel.top/blockSize)*miniMapScale+miniMapTop+miniMapBorder+1,2,0,2*Math.PI);
+        ctx.fill();
+
+        // Flipper
+        ctx.beginPath();
+        ctx.arc((flipper.left/blockSize)*miniMapScale+miniMapLeft+miniMapBorder+1, (flipper.top/blockSize)*miniMapScale+miniMapTop+miniMapBorder+1,2,0,2*Math.PI);
+        ctx.fill();
 		
 		ctx.fillStyle="#FFF";
 	}
@@ -535,7 +547,7 @@
 		return false;
 	}
 	
-	function miniMapIntersects(){
+	function boxIntersects(){
             triggerPopUp("Well, Mini Map found!", "You can show/hide the Map pressing 'M'", 3000);
             hasMiniMap = true;
     }
@@ -600,7 +612,7 @@
                 }
                 */                
                 if (!hasMiniMap && player.intersects(box)) {
-                    miniMapIntersects();
+                    boxIntersects();
                     player.top = box.bottom;
                 }
 
@@ -627,7 +639,7 @@
                 }
 				*/
                 if (!hasMiniMap && player.intersects(box)) {
-                    miniMapIntersects();
+                    boxIntersects();
                     player.right = box.left;
                 }
 
@@ -654,7 +666,7 @@
                 }
 				*/
                 if (!hasMiniMap && player.intersects(box)) {
-                    miniMapIntersects();
+                    boxIntersects();
                     player.bottom = box.top;
                 }
 
@@ -681,7 +693,7 @@
                 }
 				*/
                 if (!hasMiniMap && player.intersects(box)) {
-                    miniMapIntersects();
+                    boxIntersects();
                     player.left = box.right;
                 }
 
@@ -715,7 +727,7 @@
             triggerPopUp("Instrucctions", "You should search a small wooden box", 3000);
         }
 
-        // ReStart
+        // Restart
         if (lastKeyPress === KEY_ESC && (end || gameover)) {
             reset();
         }
@@ -815,33 +827,80 @@
     }
 	
     function reset(){
+        // Reset Variables
+        lastUpdate = 0;
+        FPS = 0;
+        frames = 0;
+        acumDelta = 0;
+        elapsedTime=0;
+
+        lastKeyPress = null;
+        pressing = [];
+        pause = true;
+        gameover = false;
+        start = true;
+        end = false;
+    
+        mazeMap = null;
+        cam = null;
+        wall = [];
+        terrain = [];
+        water = [];
+        box = null;
+        flipper = null;
+        snorkel = null;
+        player = null;
+        dir = 0;
+        
+        hasMiniMap = false;
+        hasFlipper = false;
+        hasSnorkel = false;
+        showMiniMap = true;
+        showPopUp = false;
+
         // Create maze
         mazeMap = new Maze(mazeW, mazeH, 'random', 1, 1);
 
         // Create player
         player = new Rect(32, 32, 32, 48, true);
 
+        // Create camera
+        cam = new Camera();
+    
         // Set initial map
         setMap();
         
-        // Create box
+         // Create box
         var x = getRandomInt(64, canvas.width-blockSize);
         var y = getRandomInt(96, canvas.height-blockSize);
         box = new Rect(x, y, blockSize, blockSize, true);
         
-        while(y%blockSize !== 0 || intersectsWall(box)){
+        while(x%blockSize !== 0 || y%blockSize !== 0 || intersectsWall(box)){
+            x = getRandomInt(64, canvas.width-blockSize);
             y = getRandomInt(96, canvas.height-blockSize);
             box = new Rect(x, y, blockSize, blockSize, true);
         }
 
         // Create equipment
-        x = getRandomInt(64, (mazeMap.gridH-2) * blockSize);
-        y = getRandomInt(96, (mazeMap.gridW-2) * blockSize);
+        x = getRandomInt(64, (mazeMap.gridH-4) * blockSize);
+        y = getRandomInt(96, (mazeMap.gridW-4) * blockSize);
         snorkel = new Rect(x, y, blockSize, blockSize, true);
 
-        x = getRandomInt(64, (mazeMap.gridH-2) * blockSize);
-        y = getRandomInt(96, (mazeMap.gridW-2) * blockSize);
+        while(x%blockSize !== 0 || y%blockSize !== 0 || intersectsWall(snorkel) || snorkel.intersects(box)){
+            x = getRandomInt(64, (mazeMap.gridH-4) * blockSize);
+            y = getRandomInt(96, (mazeMap.gridW-4) * blockSize);
+            snorkel = new Rect(x, y, blockSize, blockSize, true);
+        }
+
+        x = getRandomInt(64, (mazeMap.gridH-4) * blockSize);
+        y = getRandomInt(96, (mazeMap.gridW-4) * blockSize);
         flipper = new Rect(x, y, blockSize, blockSize, true);
+
+        while(x%blockSize !== 0 || y%blockSize !== 0 || intersectsWall(flipper) || flipper.intersects(box) || flipper.intersects(snorkel)){
+            x = getRandomInt(64, (mazeMap.gridH-4) * blockSize);
+            y = getRandomInt(96, (mazeMap.gridW-4) * blockSize);
+            flipper = new Rect(x, y, blockSize, blockSize, true);
+        }
     }
 
     window.addEventListener('load', init, false);
