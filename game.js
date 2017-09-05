@@ -21,6 +21,7 @@
     var acumDelta = 0;
     var gTime = 0;
     var elapsedTime = 0;
+    var timeLimit = 5;
 
     var lastKeyPress = null;
     var pressing = [];
@@ -56,6 +57,7 @@
     var endTimePopUp = 0;
     var popUpTitle;
     var popUpMessage;
+    var gameoverMsg;
     var endTimeInformation = 0;
 
     function convertTime(time){
@@ -71,6 +73,16 @@
     function getRandomInt(min, max) {
 		return Math.floor(Math.random() * (max - min + 1)) + min;
 	}
+
+    function fillTextMultiLine(ctx, text, x, y) {
+        var lineHeight = 16;
+        var lines = text.split("\n");
+        
+        for (var i = 0; i < lines.length; ++i) {
+            ctx.fillText(lines[i], x, y);
+            y += lineHeight;
+        }
+    }
 
 	function Maze(w, h, nextCell, startX, startY) {
 		this.w = (isNaN(w) || w < 5 || w > 999 ? 20 : w);
@@ -362,7 +374,7 @@
         ctx.font = "20px Impact";
         ctx.fillText('WIN', canvas.width/2, canvas.height/2-30);
         ctx.font = "10px Verdana";
-        ctx.fillText("Congratulations, you have became an Explorer!", canvas.width/2, canvas.height/2-10); 
+        ctx.fillText("Congratulations, you have become an Explorer!", canvas.width/2, canvas.height/2-10); 
         if((~~(gTime*3)%2) === 1){
             ctx.font = "12px Verdana";
             ctx.fillText("Press 'ESC' to restart the game", canvas.width/2, canvas.height/2+20); 
@@ -392,7 +404,7 @@
         ctx.font = "20px Impact";
         ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2-30);
         ctx.font = "10px Verdana";
-        ctx.fillText("You need a snorkel and a flipper, to become an Explorer!", canvas.width/2, canvas.height/2-10); 
+        ctx.fillText(gameoverMsg, canvas.width/2, canvas.height/2-10); 
         if((~~(gTime*3)%2) === 1){
             ctx.font = "12px Verdana";
             ctx.fillText("Press 'ESC' to restart the game", canvas.width/2, canvas.height/2+20); 
@@ -401,14 +413,15 @@
 
     function drawPopUp(){
         ctx.fillStyle = '#80A1C1';
-        ctx.fillRect(canvas.width/2-145, 75, 290, 90);
+        ctx.fillRect(canvas.width/2-145, 75, 290, 120);
         ctx.textAlign = 'center';
         ctx.fillStyle = '#FFF';
         ctx.font = "16px Verdana";
         ctx.fillText(popUpTitle, canvas.width/2, 100); 
 
         ctx.font = "12px Verdana";
-        ctx.fillText(popUpMessage, canvas.width/2, 130); 
+        fillTextMultiLine(ctx, popUpMessage, canvas.width/2, 130);
+        //ctx.fillText(popUpMessage, canvas.width/2, 130); 
 
         resetStyles();
     }
@@ -605,6 +618,7 @@
 
         drawElapsedTime();
 
+        /*
         // FOR DEBUG
         // Draw FPS
         ctx.fillStyle = '#FFF';
@@ -617,7 +631,8 @@
         // Draw player position
         ctx.fillText('Player: (' + player.left +", "+ player.top + ")", 10, 45);
                
-        //drawGrid();
+        drawGrid();
+        */
     }
 	
 	function intersectsWall(object) {
@@ -630,23 +645,23 @@
 	}
 	
 	function boxIntersects(){
-            triggerPopUp("Well, Mini Map found!", "You can show/hide the Map pressing 'M'", 3);
+            triggerPopUp("Well, Mini Map found!", "You can show/hide the Map pressing 'M' \n \n Now, you should search a snorkel and a flipper", 3);
             hasMiniMap = true;
     }
 
     function snorkelIntersects(){
-            var msg = "You should search the exit, a small lake.";
+            var msg = "Now, you should search the exit, a small lake.";
             if(!hasFlipper){
-                msg = "You should search a flipper.";
+                msg = "Now, you should search a flipper.";
             }
             triggerPopUp("Well, Snorkel found!", msg, 3);
             hasSnorkel = true;
     }
 
     function flipperIntersects(){
-            var msg = "You should search the exit, a small lake.";
+            var msg = "Now, you should search the exit, a small lake.";
             if(!hasSnorkel){
-                 msg = "You should search a snorkel.";
+                 msg = "Now, you should search a snorkel.";
             }
 
             triggerPopUp("Well, Flipper found!", msg, 3);
@@ -661,7 +676,9 @@
             }
             else{
                 gameover = true;
+                gameoverMsg = "You need a snorkel and a flipper, to become an Explorer!";
                 pause = true;
+
             }
         }
     }
@@ -682,6 +699,11 @@
         gTime += deltaTime;
 
         if (!pause) {
+            if(elapsedTime > timeLimit * 60){
+                gameover = true;
+                gameoverMsg = "You have run out of time!";
+                pause = true;
+            }
 
             // Increment elapsedTime
             elapsedTime += deltaTime;
@@ -691,13 +713,13 @@
                 dir = 2;
                 moving = true;
                 player.top -= 120 * deltaTime;
-                /*
+                
                 for (i = 0, l = wall.length; i < l; i += 1) {
                     if (player.intersects(wall[i])) {
                         player.top = wall[i].bottom;
                     }
                 }
-                */                
+                                
                 if (!hasMiniMap && player.intersects(box)) {
                     boxIntersects();
                     player.top = box.bottom;
@@ -719,13 +741,13 @@
                 dir = 1;
                 moving = true;
                 player.left += 120 * deltaTime;
-                /*
+                
                 for (i = 0, l = wall.length; i < l; i += 1) {
                     if (player.intersects(wall[i])) {
                         player.right = wall[i].left;
                     }
                 }
-				*/
+				
                 if (!hasMiniMap && player.intersects(box)) {
                     boxIntersects();
                     player.right = box.left;
@@ -747,13 +769,13 @@
                 dir = 0;
                 moving = true;
                 player.top += 120 * deltaTime;
-                /*
+                
                 for (i = 0, l = wall.length; i < l; i += 1) {
                     if (player.intersects(wall[i])) {
                         player.bottom = wall[i].top;
                     }
                 }
-				*/
+				
                 if (!hasMiniMap && player.intersects(box)) {
                     boxIntersects();
                     player.bottom = box.top;
@@ -775,13 +797,13 @@
                 dir = 3;
                 moving = true;
                 player.left -= 120 * deltaTime;
-                /*
+                
                 for (i = 0, l = wall.length; i < l; i += 1) {
                     if (player.intersects(wall[i])) {
                         player.left = wall[i].right;
                     }
                 }
-				*/
+			
                 if (!hasMiniMap && player.intersects(box)) {
                     boxIntersects();
                     player.left = box.right;
@@ -922,6 +944,7 @@
         FPS = 0;
         frames = 0;
         acumDelta = 0;
+        gTime = 0;
         elapsedTime=0;
 
         lastKeyPress = null;
@@ -930,6 +953,7 @@
         gameover = false;
         start = true;
         end = false;
+        moving = false;
     
         mazeMap = null;
         cam = null;
@@ -947,6 +971,9 @@
         hasSnorkel = false;
         showMiniMap = true;
         endTimePopUp = 0;
+        popUpTitle  = '';
+        popUpMessage = '';
+        endTimeInformation = 0;
 
         // Create maze
         mazeMap = new Maze(mazeW, mazeH, 'random', 1, 1);
